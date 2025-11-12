@@ -22,13 +22,13 @@ A lightweight, interactive bash script that measures disk read and write speeds 
 ```bash
 git clone <repository-url>
 cd disk-speed-test
-chmod +x disk_speed_test.sh
+chmod +x disk_speed_TUI.sh
 ```
 
 ## Usage
 
 ```bash
-./disk_speed_test.sh
+./disk_speed_TUI.sh
 ```
 
 The script will:
@@ -106,7 +106,7 @@ TOTAL_BLOCKS=500                    # Number of blocks
 
 ### Script won't run
 ```bash
-chmod +x disk_speed_test.sh
+chmod +x disk_speed_TUI.sh
 ```
 
 ### "bc: command not found"
