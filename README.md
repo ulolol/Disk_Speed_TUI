@@ -5,9 +5,10 @@ A lightweight, interactive bash script that measures disk read and write speeds 
 ## Features
 
 - **Real-time Progress Bars** - Visual feedback with percentage completion for both read and write tests
-- **Live Speed Calculations** - Watch MB/s speed update in real-time as each block completes
-- **Interactive TUI** - Clean, user-friendly terminal interface with colored output
-- **Accurate Measurements** - Tests 500MB total (500 × 1MB blocks) with proper fsync flushing
+- **Live Speed Calculations** - Watch MB/s speed update in real time as each chunk completes while the progress line reports MB counters.
+- **Interactive TUI** - Clean, user-friendly terminal interface with colored output plus disk/test parameter headers and per-run chunk details.
+- **Accurate Measurements** - Tests still cover 500 MB total but now use chunked `dd` calls (default 10 MB per chunk) with a single `sync` flush to keep process overhead low while preserving accuracy.
+- **Unique Temporary Files** - Each run creates its own temporary test file via `mktemp` (or uses a custom `TEST_FILE` you export) and still cleans it up automatically.
 - **Results Summary** - Final report showing both write and read speeds
 
 ## Requirements
@@ -15,6 +16,8 @@ A lightweight, interactive bash script that measures disk read and write speeds 
 - Bash 4.0+
 - `dd` command (standard on most Unix-like systems)
 - `bc` for floating-point calculations
+- `awk` for formatting and size math
+- `mktemp` for creating isolated test files
 - At least 500MB of free disk space
 
 ## Installation
@@ -68,39 +71,41 @@ Read Test       [========================================] 100% 1200.50 MB/s
 
 ## How It Works
 
+Every run generates a unique temporary test file via `mktemp` (you can still override the location by exporting `TEST_FILE` before running the script). The test size remains 500MB, but the script now writes and reads that data in chunked batches (default 10MB per progress update) to lower per-iteration overhead while keeping the TUI responsive.
+
 ### Write Test
-- Creates a test file by writing 1MB blocks sequentially
-- Uses `dd` with `conv=fdatasync` to ensure data is actually written to disk
-- Tracks elapsed time to calculate real-time speed
-- Updates progress bar after each block
+- Creates the test file by writing `CHUNK_BLOCKS`-sized segments (default 10MB) with `dd`, using `seek` to append each subsequent chunk.
+- Drops per-block syncing in favor of a single `sync` after all chunks have been written, while still displaying chunk-level speed and MB counters.
+- Tracks elapsed time through the whole test so live MB/s values stay accurate as the progress bar advances.
 
 ### Read Test
-- Reads the previously created test file in 1MB increments
-- Uses random block access pattern (via `skip` parameter)
-- Calculates speed based on total blocks read and elapsed time
-- Displays live speed calculations
+- Reads the same file back in matching chunk sizes using `skip` to jump to each chunk in turn.
+- Measures elapsed time after every chunk so the progress bar reflects MB counters plus MB/s speed.
 
 ### Cleanup
-- Automatically removes the temporary test file after completion
+- Automatically removes the uniquely named temporary test file after completion
 - Removes temporary speed result files
 
 ## Customization
 
-You can modify these variables at the top of the script:
+You can modify these variables at the top of the script or set them via environment before running:
 
-```bash
-TEST_FILE="$HOME/.speed_test_temp"  # Location of test file
+```
+TEST_FILE=""                        # Optional: Provide a path, otherwise the script uses mktemp for uniqueness
 FILE_SIZE="500M"                    # Total size to test
 BLOCK_SIZE="1M"                     # Size per block
-TOTAL_BLOCKS=500                    # Number of blocks
+TOTAL_BLOCKS=500                      # Number of blocks
+CHUNK_BLOCKS=10                       # Blocks per progress chunk (default 10 = 10MB progress updates)
 ```
+
 
 ## Performance Considerations
 
-- **Accuracy**: The script uses `fdatasync` to ensure writes are committed to disk, giving realistic write speeds
-- **Block Size**: 1MB blocks provide a good balance between granular progress updates and test duration
-- **Test Duration**: Full test typically takes 30-60 seconds depending on disk speed
-- **Temporary Files**: Test files are stored in your home directory (can be changed via `TEST_FILE` variable)
+- **Accuracy**: Chunked `dd` writes avoid per-block fsync while a final `sync` keeps throughput realistic.
+- **Chunking**: Default 10MB chunk size cuts down on process startup overhead but still delivers live MB counters for every update.
+- **Block Size**: 1MB blocks keep progress steady; adjust `BLOCK_SIZE` and `CHUNK_BLOCKS` together if you want coarser chunks.
+- **Test Duration**: Full test typically takes 30-60 seconds depending on disk speed.
+- **Temporary Files**: Each run uses `mktemp` for an isolated file (override with `TEST_FILE` if you need a fixed path).
 
 ## Troubleshooting
 
