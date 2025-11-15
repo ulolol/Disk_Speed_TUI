@@ -139,9 +139,9 @@ show_disk_info() {
 show_header() {
     clear_screen
     printf "\n"
-    print_centered "╔═══════════════════════════════════════════════╗"
-    print_centered "║      💾 Disk Speed Test - Interactive TUI     ║"
-    print_centered "╚═══════════════════════════════════════════════╝"
+    print_centered " ╔═══════════════════════════════════════════════╗"
+    print_centered " ║      💾 Disk Speed Test - Interactive TUI     ║"
+    print_centered " ╚═══════════════════════════════════════════════╝"
     printf "\n"
 }
 
@@ -315,5 +315,6 @@ printf "\n"
 cleanup
 cleanup_tmp_files
 
-printf "${YELLOW}Press Enter to exit...${NC}"
-read
+printf "${YELLOW}Press any key to exit...${NC}"
+read -rsn1
+printf "\n"
