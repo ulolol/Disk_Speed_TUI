@@ -8,18 +8,34 @@ FILE_SIZE="500M"
 BLOCK_SIZE="1M"
 TOTAL_BLOCKS=500
 
+# --- Functions ---
+
+# Check for necessary commands
+check_dependencies() {
+    local deps=("dd" "bc" "tput" "clear" "df")
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            printf "${RED}Error: Required command '$dep' not found. Please install it.${NC}\n"
+            show_cursor
+            exit 1
+        fi
+    done
+}
+
+
 # Color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+# Color codes
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+BLUE=$(tput setaf 4)
+CYAN=$(tput setaf 6)
+NC=$(tput sgr0) # No Color
 
 # Terminal control
-clear_screen() { clear; }
-hide_cursor() { printf "\033[?25l"; }
-show_cursor() { printf "\033[?25h"; }
+clear_screen() { tput clear; }
+hide_cursor() { tput civis; }
+show_cursor() { tput cnorm; }
 
 # Draw progress bar
 draw_progress_bar() {
@@ -42,6 +58,13 @@ print_centered() {
     local width=${2:-80}
     local padding=$(( (width - ${#text}) / 2 ))
     printf "%${padding}s%s\n" "" "$text"
+}
+
+# Main TUI display
+show_disk_info() {
+    printf "${BLUE}Disk Information for Test Location (${YELLOW}$HOME${BLUE}):${NC}\n"
+    df -h "$HOME" | awk 'NR==1 || NR==2 {print "  " $0}'
+    printf "\n"
 }
 
 # Main TUI display
@@ -151,14 +174,24 @@ cleanup() {
     if [ ! -f "$TEST_FILE" ]; then
         printf "${GREEN}✓ Test file cleaned up successfully${NC}\n"
     else
-        printf "${RED}✗ Warning: Failed to delete test file${NC}\n"
-        exit 1
+        printf "${RED}✗ Warning: Failed to delete test file: $TEST_FILE${NC}\n"
     fi
+}
+
+# Cleanup routine for temporary speed files
+cleanup_tmp_files() {
+    rm -f /tmp/write_speed.txt /tmp/read_speed.txt
+    # No need to check for existence, just try to remove
 }
 
 # Main execution
 hide_cursor
-trap show_cursor EXIT
+trap 'show_cursor; cleanup_tmp_files; exit' EXIT
+
+check_dependencies
+
+show_header
+show_disk_info
 
 write_speed_test
 printf "\n"
