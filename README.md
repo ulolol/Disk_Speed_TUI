@@ -4,12 +4,26 @@ A lightweight, interactive bash script that measures disk read and write speeds 
 
 ## Features
 
+### Core Functionality
 - **Real-time Progress Bars** - Visual feedback with percentage completion for both read and write tests
 - **Live Speed Calculations** - Watch MB/s speed update in real time as each chunk completes while the progress line reports MB counters.
 - **Interactive TUI** - Clean, user-friendly terminal interface with colored output plus disk/test parameter headers and per-run chunk details.
-- **Accurate Measurements** - Tests still cover 500 MB total but now use chunked `dd` calls (default 10 MB per chunk) with a single `sync` flush to keep process overhead low while preserving accuracy.
-- **Unique Temporary Files** - Each run creates its own temporary test file via `mktemp` (or uses a custom `TEST_FILE` you export) and still cleans it up automatically.
 - **Results Summary** - Final report showing both write and read speeds
+
+### Technical Highlights
+- ⏲️ **Nanosecond-accurate timing** (±1 ms precision) using Bash's `%N` epoch for reliable results even on NVMe drives exceeding 3 GB/s
+- 📊 **Colorful ncurses-style UI** using only `tput` (zero external dependencies beyond coreutils)
+- ⛓️‍💥 **Chunked dd execution** with seek/skip + `conv=notrunc` for accurate progress reporting without sacrificing performance
+- 🌪️ **Proper cache flush via `sync`** for honest write speeds (no RAM-cached fake results)
+- 📝 **Fully configurable** via environment variables (file size, block size, chunk granularity, custom paths)
+- 🧹 **Graceful cleanup** with `trap EXIT`, safe `mktemp` usage, and cursor state restoration
+- 📖 **Human-readable suffixes parser** (K/M/G/T) identical to dd/gnu tools
+- 🖥️ **Cross-platform compatible** on Linux and macOS
+
+### Data Integrity
+- **Accurate Measurements** - Chunked `dd` calls (default 10 MB per chunk) with a single `sync` flush keep process overhead low while preserving accuracy.
+- **Unique Temporary Files** - Each run creates its own temporary test file via `mktemp` (or uses a custom `TEST_FILE` you export) and cleans it up automatically.
+- **Results are realistic and repeatable** — ideal for quickly comparing HDDs, SSDs, NVMe, RAID arrays, or encrypted volumes
 
 ## Requirements
 
@@ -68,6 +82,10 @@ Read Test       [========================================] 100% 1200.50 MB/s
   Write Speed:         450.25 MB/s
   Read Speed:          1200.50 MB/s
 ```
+
+## Demo Video
+
+![Disk Speed TUI Demo](disk_speed_tui_demo.gif)
 
 ## How It Works
 
