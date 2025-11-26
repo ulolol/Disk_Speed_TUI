@@ -1,5 +1,7 @@
 # Disk Speed Test - Interactive TUI
 
+![Logo](disk-speed-tui-logo_github.gif)
+
 A lightweight, interactive bash script that measures disk read and write speeds with real-time progress bars and live speed calculations.
 
 ## Features
